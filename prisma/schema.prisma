@@ -1,0 +1,369 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  phone     String
+  email     String?
+  address   String?
+  
+  // Extended Profile
+  birthDate DateTime?
+  gender      String? // "Homme", "Femme", "Enfant"
+  
+  // Emergency Contacts
+  emergencyContact String?
+  emergencyPhone String?
+  
+  // Additional Contacts (JSON array)
+  contacts String? // JSON: [{ type: "Mobile", number: "..." }]
+
+  // Medical Details
+  bloodType String? // A+, A-, B+, B-, AB+, AB-, O+, O-
+  allergies String?
+  medicalHistory String? // Maladies / Antécédents
+  currentMedications String? // Médicaments quotidiens (renamed from dailyMedications)
+  
+  notes     String?
+  lastVisit DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  visits    Visit[]
+  teeth     ToothState[]
+  dentitionType String @default("ADULT") // "ADULT", "CHILD"
+  
+  // 3D Advanced Schema
+  toothTransforms ToothTransform[] @relation("PatientToothTransforms")
+  treatmentPlans TreatmentPlan[] @relation("PatientTreatmentPlans")
+  surfaceMarkings SurfaceMarking[] @relation("PatientSurfaceMarkings")
+}
+
+model ToothState {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  toothNumber Int      // FDI Notation (e.g., 11-48, 51-85)
+  status      String   // e.g., "HEALTHY", "CARIES", "MISSING", "CROWN", "FILLING", "BRIDGE"
+  notes       String?
+  date        DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Visit {
+  id        String    @id @default(cuid())
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  date      DateTime  @default(now())
+  treatment String
+  cost      Decimal   @default(0)
+  paid      Decimal   @default(0)
+  status    String    @default("SCHEDULED") // SCHEDULED, WAITING, IN_PROGRESS, COMPLETED, CANCELLED
+  specialty String?   // ODF, Chirurgie, Proteges, Soin
+  sessionType String? // Consultation, Suivi, Pose d'appareil
+  description String? // Description of the session
+  order     Int       @default(0) // For waiting list order
+  notes     String?
+  images    String?   // JSON string of image paths
+  
+  // Advanced visit tracking
+  operatorName String? // Dentist/Hygienist who performed the visit
+  startTime    DateTime? // When the visit actually started
+  endTime      DateTime? // When the visit actually ended
+  estimatedDuration Int? // In minutes
+  
+  // Pre/Post Session Details
+  preSessionNotes String? // Patient condition before session
+  postSessionNotes String? // Patient condition after session
+  toothConditionBefore String? // JSON: tooth states before treatment
+  toothConditionAfter String? // JSON: tooth states after treatment
+  
+  // Operations within this visit
+  operations Operation[]
+  
+  // Finalization
+  isFinalized Boolean @default(false)
+  finalizedAt DateTime?
+  finalizedBy String?
+  
+  payments  Payment[]
+  history   VisitHistory[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Operation {
+  id        String    @id @default(cuid())
+  visitId   String
+  visit     Visit     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  
+  // Operation Details
+  procedureCode String? // e.g., "34110" - teeth code + procedure code
+  procedureName String  // e.g., "Composite Restoration - Class II"
+  procedureCategory String? // "Restoration", "Endodontics", "Extraction", "Implant", "Orthodontics", "Periodontics", "Cosmetic"
+  description String?
+  
+  // Tooth/Surface Information
+  affectedTeeth String? // JSON: [11, 12, 13] - FDI tooth numbers
+  surfaces String? // JSON: ["O", "M"] - Occlusal, Mesial, Distal, Facial, Lingual
+  
+  // Status & Progress
+  status String @default("PLANNED") // PLANNED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED, DEFERRED
+  startTime DateTime?
+  endTime DateTime?
+  actualDuration Int? // In minutes
+  
+  // Pre-operative Assessment
+  preOpAssessment String? // Clinical findings before operation
+  anesthesiaType String? // "Local", "General", "Topical", "None"
+  anesthesiaAmount Decimal? // in mg
+  
+  // Clinical Details
+  materialsUsed String? // JSON array of materials with quantities
+  instruments String? // JSON array of instruments used
+  complicationsOccurred Boolean @default(false)
+  complications String? // Description of any complications
+  
+  // Post-operative Instructions
+  postOpInstructions String?
+  postOpMedication String? // Prescriptions/medications
+  
+  // Follow-up
+  followUpRequired Boolean @default(false)
+  followUpDate DateTime?
+  followUpReason String?
+  
+  // Cost Breakdown
+  materialsCost Decimal @default(0)
+  laborCost Decimal @default(0)
+  totalCost Decimal @default(0)
+  
+  // Images & Documentation
+  images String? // JSON string of image paths
+  radiographs String? // JSON: X-ray image references
+  
+  // Procedure Steps (detailed workflow)
+  steps ProcedureStep[]
+  
+  // History
+  history OperationHistory[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProcedureStep {
+  id          String @id @default(cuid())
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  
+  stepNumber Int
+  stepName String // e.g., "Isolation", "Cavity Preparation", "Base Application"
+  description String?
+  status String @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
+  
+  startTime DateTime?
+  endTime DateTime?
+  notes String?
+  images String? // JSON: step-specific images
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([operationId, stepNumber])
+}
+
+model OperationHistory {
+  id          String @id @default(cuid())
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  
+  // What changed
+  fieldChanged String // e.g., "status", "materialsUsed", "complications"
+  oldValue String?
+  newValue String?
+  changeType String // "CREATED", "UPDATED", "DELETED", "STATUS_CHANGE"
+  
+  // Who and when
+  changedBy String? // Operator name
+  changedAt DateTime @default(now())
+  reason String? // Why the change was made
+  
+  createdAt DateTime @default(now())
+}
+
+model VisitHistory {
+  id        String @id @default(cuid())
+  visitId   String
+  visit     Visit  @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  
+  // What changed
+  fieldChanged String
+  oldValue String?
+  newValue String?
+  changeType String // "CREATED", "UPDATED", "STATUS_CHANGE"
+  
+  // Who and when
+  changedBy String?
+  changedAt DateTime @default(now())
+  reason String?
+  
+  createdAt DateTime @default(now())
+}
+
+model ProcedureTemplate {
+  id        String @id @default(cuid())
+  name      String // e.g., "Class II Composite Restoration"
+  category  String // "Restoration", "Endodontics", etc.
+  
+  // Standard procedure design
+  description String?
+  standardSteps String? // JSON array of standard steps
+  estimatedDuration Int? // In minutes
+  requiredMaterials String? // JSON array of standard materials
+  requiredInstruments String? // JSON array of instruments
+  estimatedCost Decimal @default(0)
+  
+  notes String?
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  visitId   String
+  visit     Visit    @relation(fields: [visitId], references: [id])
+  operationId String? // Can be linked to specific operation
+  amount    Decimal
+  date      DateTime @default(now())
+  paymentMethod String? // "Cash", "Card", "Check", "Transfer"
+  note      String?
+  recordedBy String?
+}
+
+// ============= 3D ADVANCED DENTAL SCHEMA =============
+
+model ToothTransform {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation("PatientToothTransforms", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  // Tooth identity
+  toothNumber Int      // FDI notation (11-48, 51-85)
+  
+  // 3D Transform State
+  positionX   Float @default(0)        // mm
+  positionY   Float @default(0)        // mm
+  positionZ   Float @default(0)        // mm
+  
+  rotationX   Float @default(0)        // degrees
+  rotationY   Float @default(0)        // degrees
+  rotationZ   Float @default(0)        // degrees
+  
+  scale       Float @default(1.0)      // 0.5-2.0
+  
+  // Visibility
+  visibility  Boolean @default(true)
+  
+  // Metadata
+  version     Int @default(1)
+  appliedInOperation String? // operationId reference
+  appliedInTreatmentPlan String? // treatmentPlanId reference
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  attachments ToothAttachment[] @relation("ToothAttachments")
+  
+  @@unique([patientId, toothNumber])
+}
+
+model ToothAttachment {
+  id          String   @id @default(cuid())
+  transformId String
+  transform   ToothTransform @relation("ToothAttachments", fields: [transformId], references: [id], onDelete: Cascade)
+  
+  // Attachment type
+  type        String   // "BRACKET", "CROWN", "IMPLANT", "ALIGNER_ATTACHMENT", "SEPARATOR"
+  attachmentCode String
+  
+  // Position relative to tooth
+  positionX   Float @default(0)
+  positionY   Float @default(0)
+  positionZ   Float @default(0)
+  
+  rotationX   Float @default(0)
+  rotationY   Float @default(0)
+  rotationZ   Float @default(0)
+  
+  scale       Float @default(1.0)
+  
+  // Properties
+  material    String? // "Ceramic", "Metal", "Sapphire"
+  archwireSlot String? // "0.022x0.028", "0.018x0.025"
+  color       String? // hex color for visualization
+  
+  // Status
+  isActive    Boolean @default(true)
+  appliedInOperation String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TreatmentPlan {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation("PatientTreatmentPlans", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  visitId     String?
+  
+  // Plan metadata
+  planName    String // e.g., "Full Orthodontic Treatment Phase 1"
+  planType    String // "FULL_ODF", "SCALING", "ORTHODONTIC_PHASE_1", "CROWN_PLANNING", "IMPLANT_PLANNING"
+  description String?
+  duration    Int? // estimated weeks
+  
+  // Treatment sequence
+  toothSequence String? // JSON: [11, 12, 21, 22, ...]
+  targetStates String? // JSON: [{ tooth: 11, position: {...}, attachments: [...] }]
+  
+  // Phases
+  phase       Int @default(1)
+  totalPhases Int @default(1)
+  
+  // Status
+  status      String @default("DRAFT") // DRAFT, ACTIVE, COMPLETED, ARCHIVED
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SurfaceMarking {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation("PatientSurfaceMarkings", fields: [patientId], references: [id], onDelete: Cascade)
+  
+  toothNumber Int
+  
+  // Dental surfaces: O (occlusal), M (mesial), D (distal), B (buccal), L (lingual)
+  surface     String
+  condition   String // "HEALTHY", "CARIES", "RESTORATION", "MISSING_SURFACE"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([patientId, toothNumber, surface])
+}
+

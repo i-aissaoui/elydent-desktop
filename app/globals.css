@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+:root {
+  /* ELYDENT Primary Colors */
+  --primary: #9b2c3e; /* Maroon */
+  --secondary: #5a5a5a; /* Gray */
+  --accent-gold: #d4af37; /* Gold */
+
+  /* Specialty Colors */
+  --specialty-soin: #ff6b6b; /* Red for Soins Généraux */
+  --specialty-odf: #4ecdc4; /* Teal for Orthodontie */
+  --specialty-chirurgie: #95e1d3; /* Mint for Chirurgie */
+  --specialty-proteges: #ffe66d; /* Yellow for Prothèses */
+
+  /* Status Colors */
+  --status-scheduled: #4ecdc4;
+  --status-waiting: #ffd93d;
+  --status-inprogress: #ff6b6b;
+  --status-completed: #6bcb77;
+  --status-cancelled: #9b9b9b;
+
+  --background: #f5f7fa;
+  --foreground: #1f2937;
+  --border: #e5e7eb;
+  --card: #ffffff;
+}
+
+@layer components {
+  /* Primary Button - White text on Maroon background */
+  .elydent-btn {
+    @apply bg-[#9B2C3E] hover:bg-[#7A1F2E] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+
+  /* Outline Button - Maroon border with maroon text on transparent */
+  .elydent-btn-outline {
+    @apply border-2 border-[#9B2C3E] text-[#9B2C3E] hover:bg-[#9B2C3E]/10 font-semibold py-3 px-6 rounded-lg transition-all duration-200;
+  }
+
+  /* Specialty Card Styles - Dark text on light colored backgrounds */
+  .specialty-soin {
+    @apply bg-[#FF6B6B]/10 border border-[#FF6B6B] text-[#CC0000];
+  }
+
+  .specialty-odf {
+    @apply bg-[#4ECDC4]/10 border border-[#4ECDC4] text-[#008B7F];
+  }
+
+  .specialty-chirurgie {
+    @apply bg-[#95E1D3]/10 border border-[#95E1D3] text-[#00695C];
+  }
+
+  .specialty-proteges {
+    @apply bg-[#FFE66D]/10 border border-[#FFE66D] text-[#F57C00];
+  }
+
+  /* Status Badge Styles */
+  .status-scheduled {
+    @apply bg-[#4ECDC4]/10 text-[#008B7F] border border-[#4ECDC4];
+  }
+  
+  .status-waiting {
+    @apply bg-[#FFD93D]/10 text-[#F57C00] border border-[#FFD93D];
+  }
+  
+  .status-inprogress {
+    @apply bg-[#FF6B6B]/10 text-[#CC0000] border border-[#FF6B6B];
+  }
+  
+  .status-completed {
+    @apply bg-[#6BCB77]/10 text-[#2E7D32] border border-[#6BCB77];
+  }
+  
+  .status-cancelled {
+    @apply bg-[#9B9B9B]/10 text-[#424242] border border-[#9B9B9B];
+  }
+}
+
+/* Smooth animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}

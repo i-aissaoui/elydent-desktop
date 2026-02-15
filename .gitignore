@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+
+# Build outputs - EXCLUDE ALL
+dist-electron/
+build/
+*.exe
+*.AppImage
+*.dmg
+*.deb
+*.rpm
+
+# Database
+*.db
+*.sqlite3
+prisma/dev.db
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Misc
+.DS_Store
+*.pem
