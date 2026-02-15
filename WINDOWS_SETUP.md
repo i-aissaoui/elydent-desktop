@@ -1,24 +1,38 @@
 # ELYDENT - Essential Source Files Only
 
-This is the minimal version with just source code for Windows migration.
+**Repository:** git@github.com:i-aissaoui/elydent-desktop.git
+**Size:** ~220KB (source code only)
 
-## Essential Files Included:
-- `app/` - Main Next.js application source
-- `electron/` - Electron main process files
-- `prisma/` - Database schema and seed data
-- `package.json` - Dependencies and scripts
-- `seed-patient-data.csv` - 67 patient records
-- Configuration files (tsconfig, next.config, etc.)
+## ✅ What's Included:
+- `app/` - Complete Next.js application (patient management, dashboard, etc.)
+- `electron/` - Desktop app configuration 
+- `prisma/` - Database schema + 67 patient import script
+- `seed-patient-data.csv` - All 67 patient records (3,574,000 DA)
+- `package.json` - All dependencies and scripts
+- Configuration files
 
-## NOT INCLUDED (download on Windows):
+## ❌ NOT Included (regenerated on Windows):
 - `node_modules/` - Run `npm install`
-- `dist-electron/` - Run `npm run electron:build`
+- `dist-electron/` - Run `npm run electron:build` 
 - `.next/` - Generated during `npm run dev`
 
-## Windows Setup:
-1. Clone this repo
-2. Run `npm install`
-3. Run `npm run electron:dev` for desktop app
-4. Patient data loads automatically
+## 🚀 Windows Setup (4 commands):
 
-Total size: ~50MB instead of 3.5GB
+```bash
+git clone https://github.com/i-aissaoui/elydent-desktop.git
+cd elydent-desktop
+npm install
+npm run electron:dev
+```
+
+**That's it!** The app will:
+1. Auto-create database with 67 patients
+2. Launch as desktop application
+3. Ready for dental clinic use
+
+## 📋 Key Commands:
+- `npm run electron:dev` - Desktop app (recommended)
+- `npm run dev` - Web browser version
+- `npm run electron:build` - Create Windows .exe
+
+Total download: **220KB** vs 3.5GB ✨
